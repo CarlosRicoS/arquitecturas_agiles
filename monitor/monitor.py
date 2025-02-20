@@ -4,6 +4,10 @@ from monitor.estado_servicio import EstadoServicio
 from servicios.rabbitMQ.publicador import Publicador
 from servicios.rabbitMQ.subscriptor import Subscriptor
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class Monitor:
     def __init__(self):
         self.cofiguracion_monitor()
@@ -11,9 +15,9 @@ class Monitor:
     def cofiguracion_monitor(self):
         # Configura estado inicial de microservicios
         self.instancias = { 
-                    "principal": EstadoServicio(nombre_instancia='principal'),   
-                    "respaldo": EstadoServicio(nombre_instancia='respaldo')
-                    }
+            "principal": EstadoServicio(nombre_instancia='principal'),
+            "respaldo": EstadoServicio(nombre_instancia='respaldo')
+        }
         # Configura mensajeria 
         self.subscriptor = Subscriptor()
         self.publicador = Publicador()
@@ -50,9 +54,10 @@ class Monitor:
     def publicar_error_servicio(self, nombre_instancia):
         self.publicador.escribir_mensajes(
             routing_key=self.error_routing_key, 
-            mensaje=f"{datetime.now()} | Error en {nombre_instancia}"
+            mensaje=f"Error en {nombre_instancia}",
+            log_level="ERROR"
         )
-        print(f"{datetime.now()} | Error en {nombre_instancia}")
+        logging.error(f"Error en {nombre_instancia}")
         
     async def start(self):
         await self.subscriptor.suscribirse(
@@ -61,6 +66,6 @@ class Monitor:
             callback=self.evento_mensaje_nuevo
         )
         self.inicio_timer()
-        print('Inicio monitoreo')
+        logging.info('Inicio monitoreo')
         while True:
             pass    

@@ -12,15 +12,9 @@
 # Instrucciones para configurar el experimento
 Para correr el experimento se debe clonar el repositorio desde la rama `main`, adicionalmente se requiere tener **docker** y **docker compose** instalado.
 
-1. Se deben configurar las variables de entorno: Crear un archivo `.env` dentro de la carpeta principal y se deben agregar las siguientes variables: 
-    ```
-    DIRECTORIO_LOGS=logs
-    URL_API_CONSULTA=host.docker.internal/inventario
-    ```
-
-2. Se debe ejecutar el siguiente comando para levantar los micro-servicios y ejecutar el experimento: 
+1. Se debe ejecutar el siguiente comando para levantar los micro-servicios y ejecutar el experimento: 
     ```
     docker compose up
     ```
-3. Esperar a que se ejecuten las pruebas del experimento, deberá aparecer un log con un mensaje indicando que la prueba ha finalizado.
-4. Verificar los logs en el directorio `logs`
+2. Esperar a que se ejecuten las pruebas del experimento.
+3. Verificar los logs en el directorio `logs`
