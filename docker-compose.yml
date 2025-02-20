@@ -1,0 +1,88 @@
+services:
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    container_name: "rabbitmq"
+    ports:
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+
+  monitor:
+    build:
+      context: .
+      dockerfile: monitor/Dockerfile
+    container_name: "monitor"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    volumes:
+      - ./logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  api-consulta-principal:
+    build:
+     context: micro-servicios/consulta-principal
+     dockerfile: ./Dockerfile
+    container_name: api-consulta-principal
+    ports:
+      - "8090:8090"
+    depends_on:
+      - rabbitmq
+      - monitor
+    volumes:
+      - ./logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  api-consulta-respaldo:
+    build:
+      context: micro-servicios/consulta-respaldo
+      dockerfile: ./Dockerfile
+    container_name: api-consulta-respaldo
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rabbitmq
+      - monitor
+    volumes:
+      - ./logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  logger:
+    build:
+     context: logger
+     dockerfile: ./Dockerfile
+    container_name: logger
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - rabbitmq
+      - monitor
+
+  experimento:
+    build: .
+    depends_on:
+      - rabbitmq
+      - monitor
+      - logger
+      - api-consulta-principal
+      - api-consulta-respaldo
+    volumes:
+      - ./logs:/app/logs

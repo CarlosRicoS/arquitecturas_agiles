@@ -1,16 +1,22 @@
-import pika 
+import os
+import logging
+import pika
+
+logger = logging.getLogger(__name__)
+rabbitmq_host = os.getenv('RABBITMQ_HOST', 'rabbitmq')
 
 class Publicador:
       
     def __init__(self):
-        self.host = 'rabbitmq' # localhost
+        self.host = rabbitmq_host
         self.nombre_exchange = 'monitor'
         self.tipo_exchange = 'direct'
         self.configuracion_mensajeria()   
-        print("Mensajería configurada")
+        logger.info("Mensajería configurada")
 
-    def escribir_mensajes(self, routing_key, mensaje):
-        self.channel.basic_publish(exchange=self.nombre_exchange, routing_key=routing_key, body=mensaje)
+    def escribir_mensajes(self, routing_key, mensaje, log_level):
+        properties = pika.BasicProperties(headers={'log_level': log_level})
+        self.channel.basic_publish(exchange=self.nombre_exchange, routing_key=routing_key, body=mensaje, properties=properties)
 
     def configuracion_mensajeria(self):
         self.connection = pika.BlockingConnection(

@@ -1,10 +1,11 @@
-FROM python:3.12
-RUN pip install pika
+FROM alpine:3.18
+
+RUN apk update && apk add --no-cache curl bash
+
 WORKDIR /app
-COPY __main__.py .
-COPY servicios/ ./servicios/
-COPY monitor/ ./monitor/
 
-ENTRYPOINT [ "python", "/app/__main__.py" ]
+COPY run_experimento.sh .
 
+RUN chmod +x run_experimento.sh
 
+CMD ["bash", "run_experimento.sh"]

@@ -1,18 +1,22 @@
+import os
 import threading
 import pika 
-import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
+rabbitmq_host = os.getenv('RABBITMQ_HOST', 'rabbitmq')
 
 class Subscriptor:
       
     def __init__(self):
-        self.host = 'rabbitmq' # localhost
+        self.host = rabbitmq_host
         self.nombre_exchange = 'monitor'
         self.tipo_exchange = 'direct'
         self.configuracion_mensajeria()   
-        print("Mensajería configurada")
+        logger.info("Mensajería configurada")
         
     async def suscribirse(self, nombre_cola, routing_key, callback):
-        print("Iniico suscripción")      
+        print("Inicio suscripción")
         self.channel.queue_declare(queue=nombre_cola)
         self.channel.queue_bind(
             exchange=self.nombre_exchange, 
@@ -23,7 +27,7 @@ class Subscriptor:
         
         thread = threading.Thread(target=self.channel.start_consuming, daemon=True)
         thread.start()
-        print("suscripción configurada")      
+        logger.info("Suscripción configurada")
 
     def configuracion_mensajeria(self):
         self.connection = pika.BlockingConnection(
