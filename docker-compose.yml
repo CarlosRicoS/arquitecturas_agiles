@@ -31,9 +31,13 @@ services:
 
   api-consulta-principal:
     build:
-     context: micro-servicios/consulta-principal
+     context: micro-servicios/consulta
      dockerfile: ./Dockerfile
     container_name: api-consulta-principal
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - API_INSTANCIA=principal
+      - API_PUERTO=8090
     ports:
       - "8090:8090"
     depends_on:
@@ -49,9 +53,13 @@ services:
 
   api-consulta-respaldo:
     build:
-      context: micro-servicios/consulta-respaldo
+      context: micro-servicios/consulta
       dockerfile: ./Dockerfile
     container_name: api-consulta-respaldo
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - API_INSTANCIA=respaldo
+      - API_PUERTO=8080
     ports:
       - "8080:8080"
     depends_on:
