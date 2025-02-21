@@ -25,11 +25,13 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(name)s|[%(levelname)s]|%(asctime)s|%(message)s',
     handlers=[
-        logging.FileHandler("logs/logger.log"),
+        logging.FileHandler("logs/logger.log", mode="w"),
         logging.StreamHandler()
     ]
 )
 
+# Set pika logger to WARNING level to suppress INFO logs
+logging.getLogger("pika").setLevel(logging.WARNING)
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='rabbitmq'))

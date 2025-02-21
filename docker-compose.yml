@@ -31,9 +31,13 @@ services:
 
   api-consulta-principal:
     build:
-     context: micro-servicios/consulta-principal
+     context: micro-servicios/consulta
      dockerfile: ./Dockerfile
     container_name: api-consulta-principal
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - API_INSTANCIA=principal
+      - API_PUERTO=8090
     ports:
       - "8090:8090"
     depends_on:
@@ -41,6 +45,12 @@ services:
       - monitor
     volumes:
       - ./logs:/app/logs
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8090/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: "json-file"
       options:
@@ -49,9 +59,13 @@ services:
 
   api-consulta-respaldo:
     build:
-      context: micro-servicios/consulta-respaldo
+      context: micro-servicios/consulta
       dockerfile: ./Dockerfile
     container_name: api-consulta-respaldo
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - API_INSTANCIA=respaldo
+      - API_PUERTO=8080
     ports:
       - "8080:8080"
     depends_on:
@@ -59,6 +73,12 @@ services:
       - monitor
     volumes:
       - ./logs:/app/logs
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: "json-file"
       options:
@@ -73,16 +93,27 @@ services:
     volumes:
       - ./logs:/app/logs
     depends_on:
-      - rabbitmq
-      - monitor
+      rabbitmq:
+        condition: service_healthy
+      monitor:
+        condition: service_started
+      api-consulta-principal:
+        condition: service_healthy
+      api-consulta-respaldo:
+        condition: service_healthy
 
   experimento:
     build: .
     depends_on:
-      - rabbitmq
-      - monitor
-      - logger
-      - api-consulta-principal
-      - api-consulta-respaldo
+      rabbitmq:
+        condition: service_healthy
+      monitor:
+        condition: service_started
+      logger:
+        condition: service_started
+      api-consulta-principal:
+        condition: service_healthy
+      api-consulta-respaldo:
+        condition: service_healthy
     volumes:
       - ./logs:/app/logs

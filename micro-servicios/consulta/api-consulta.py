@@ -7,12 +7,15 @@ import pika
 import random
 from fastapi import FastAPI
 
+instancia = os.getenv("API_INSTANCIA", "principal")
+rabbitmq_host = os.getenv('RABBITMQ_HOST', 'rabbitmq')
+puerto = os.getenv("API_PUERTO", "8090")
 
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(name)s|[%(levelname)s]|%(asctime)s|%(message)s',
     handlers=[
-        logging.FileHandler("logs/api-consulta-respaldo.log"),
+        logging.FileHandler(f"logs/api-consulta-{instancia}.log", mode="w"),
         logging.StreamHandler()
     ]
 )
@@ -20,7 +23,6 @@ logging.basicConfig(
 # Set pika logger to WARNING level to suppress INFO logs
 logging.getLogger("pika").setLevel(logging.WARNING)
 
-rabbitmq_host = os.getenv('RABBITMQ_HOST', 'rabbitmq')
 
 app = FastAPI()
 
@@ -33,10 +35,9 @@ def publicar_estado():
 
     channel.exchange_declare(exchange='monitor', exchange_type='direct')
 
-    message = 'respaldo'
     properties = pika.BasicProperties(headers={'log_level': 'DEBUG'})
-    channel.basic_publish(exchange='monitor', routing_key='healthcheck', body=message, properties=properties)
-    logging.debug(f"[API-Consulta-Respaldo] Sent {message}")
+    channel.basic_publish(exchange='monitor', routing_key='healthcheck', body=instancia, properties=properties)
+    logging.debug(f"[API-Consulta-{instancia.capitalize()}] Sent {instancia}")
 
 
 async def publicar_estado_periodicamente():
@@ -66,6 +67,10 @@ async def consulta():
 
     return status
 
+@app.get("/health")
+async def health():
+    return "ok"
+
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=8070)
+    uvicorn.run(app, host='0.0.0.0', port=int(puerto))
