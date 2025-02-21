@@ -17,4 +17,19 @@ Para correr el experimento se debe clonar el repositorio desde la rama `main`, a
     docker compose up
     ```
 2. Esperar a que se ejecuten las pruebas del experimento.
-3. Verificar los logs en el directorio `logs`
+3. Verificar que el experimento corra satisfactoriamente revisando los logs en el directorio `logs` (se crean varios archivos). Validar el archivo `run_experimento.log` un ejemplo de este cuando el experimento corre satisfactoriamente: 
+   ```
+    2025-02-21 01:55:45 - Inicio Experimento
+    2025-02-21 01:55:45 - Call 1: "en mantenimiento"
+    2025-02-21 01:55:46 - Call 2: "en mantenimiento"
+    2025-02-21 01:55:50 - Call 3: "indispuesto"
+    2025-02-21 01:55:54 - Call 4: "indispuesto"
+    2025-02-21 01:55:55 - Call 5: "en mantenimiento"
+    2025-02-21 01:55:57 - Call 6: "disponible"
+    2025-02-21 01:55:58 - Call 7: "en mantenimiento"
+    2025-02-21 01:55:59 - Call 8: "en mantenimiento"
+    2025-02-21 01:56:00 - Call 9: "disponible"
+    2025-02-21 01:56:04 - Call 10: "indispuesto"
+    2025-02-21 01:56:05 - Fin Experimento
+   ```
+4. Realizar el análisis de los demás logs (el `logger.log` almacena los mensajes error reportados por el monitor) para comprobar que se ha detectado la/las falla/s.
