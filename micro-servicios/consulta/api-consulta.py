@@ -10,6 +10,7 @@ from fastapi import FastAPI
 instancia = os.getenv("API_INSTANCIA", "principal")
 rabbitmq_host = os.getenv('RABBITMQ_HOST', 'rabbitmq')
 puerto = os.getenv("API_PUERTO", "8090")
+periodo_heart_beat = os.getenv("HEART_BEAT_PERIOD", "0.5")
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -26,7 +27,11 @@ logging.getLogger("pika").setLevel(logging.WARNING)
 
 app = FastAPI()
 
-mock_statuses = ['disponible', 'indispuesto', 'en mantenimiento']
+mock_statuses = [
+    'disponible', 
+    'indispuesto', 
+    # 'en mantenimiento'
+]
 
 def publicar_estado():
     connection = pika.BlockingConnection(
@@ -43,7 +48,7 @@ def publicar_estado():
 async def publicar_estado_periodicamente():
     while True:
         publicar_estado()
-        await asyncio.sleep(1)
+        await asyncio.sleep(float(periodo_heart_beat))
 
 
 @app.on_event("startup")

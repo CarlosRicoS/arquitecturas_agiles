@@ -47,7 +47,7 @@ logging.info('[Logger] Waiting for logs.')
 def callback(ch, method, properties, body):
     log_level = properties.headers.get('log_level', 'INFO') if properties and properties.headers else 'INFO'
     log_func = log_level_map.get(log_level, logging.info)
-    log_func(body)
+    log_func(body.decode("utf-8"))
 
 channel.basic_consume(
     queue='error_report', on_message_callback=callback, auto_ack=True)

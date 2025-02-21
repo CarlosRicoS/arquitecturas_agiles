@@ -1,5 +1,7 @@
-from datetime import datetime, timedelta
 import threading
+import uuid
+import os
+from datetime import datetime, timedelta
 from monitor.estado_servicio import EstadoServicio
 from servicios.rabbitMQ.publicador import Publicador
 from servicios.rabbitMQ.subscriptor import Subscriptor
@@ -24,8 +26,8 @@ class Monitor:
         self.error_routing_key = 'error'
         self.healthcheck_routing_key = 'healthcheck'
         self.nombre_cola_healthcheck = 'healthcheck'
-        self.frecuencia_monitoreo = '2'
-        self.max_retrazo_healtcheck = '2100'
+        self.frecuencia_monitoreo = os.getenv('MONITOR_FREQ_S', '2')
+        self.max_retrazo_healtcheck = os.getenv('MAX_SERVICE_DELAY_MS', '2100')
         
     # callback para cálculo de estado de servicios
     def monitorear_estado(self):
@@ -34,7 +36,7 @@ class Monitor:
 
     def inicio_timer(self):
         timer = threading.Timer(
-            int(self.frecuencia_monitoreo), 
+            float(self.frecuencia_monitoreo), 
             self.monitorear_estado
         )
         timer.start()        
@@ -50,14 +52,24 @@ class Monitor:
     def evento_mensaje_nuevo(self, ch, method, properties, body):
         body_str = body.decode("utf-8")
         self.instancias[body_str].ultimo_reporte = datetime.now()
+        self.instancias[body_str].marca_error = None
     
     def publicar_error_servicio(self, nombre_instancia):
+        marca_error = self.obtener_marca_error(nombre_instancia)
+        mensaje_error = f"{marca_error} | {nombre_instancia}"
+        logging.error(mensaje_error)
         self.publicador.escribir_mensajes(
             routing_key=self.error_routing_key, 
-            mensaje=f"Error en {nombre_instancia}",
+            mensaje=mensaje_error,
             log_level="ERROR"
         )
-        logging.error(f"Error en {nombre_instancia}")
+    
+    def obtener_marca_error(self, nombre_instancia):
+        marca_error = self.instancias[nombre_instancia].marca_error
+        if marca_error is None:
+            self.instancias[nombre_instancia].marca_error = uuid.uuid4().hex
+            marca_error = self.instancias[nombre_instancia].marca_error
+        return marca_error
         
     async def start(self):
         await self.subscriptor.suscribirse(
@@ -66,6 +78,6 @@ class Monitor:
             callback=self.evento_mensaje_nuevo
         )
         self.inicio_timer()
-        logging.info('Inicio monitoreo')
+        logging.info('|Inicio monitoreo')
         while True:
             pass    

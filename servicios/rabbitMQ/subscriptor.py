@@ -13,7 +13,6 @@ class Subscriptor:
         self.nombre_exchange = 'monitor'
         self.tipo_exchange = 'direct'
         self.configuracion_mensajeria()   
-        logger.info("Mensajería configurada")
         
     async def suscribirse(self, nombre_cola, routing_key, callback):
         print("Inicio suscripción")

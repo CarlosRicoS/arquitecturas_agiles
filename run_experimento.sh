@@ -4,17 +4,17 @@ LOG_FILE="logs/run_experimento.log"
 API_URL="http://api-consulta-principal:8090/consulta"
 
 log_message() {
-  TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-  echo "$TIMESTAMP - $1" >> $LOG_FILE
+  echo "$1" >> $LOG_FILE
 }
 
 echo "" > $LOG_FILE
-log_message "Inicio Experimento"
-for i in {1..10}
+for experimento in $(seq 1 "$CANTIDAD_EXPERIMENTOS")
 do
-  RESPONSE=$(curl -s $API_URL)
-  TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-  log_message "Call $i: $RESPONSE"
-  sleep 1
+  for llamado in $(seq 1 "$PETICIONES_POR_EXPERIMENTO")
+  do
+    EVENT_TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+    log_message "$EVENT_TIMESTAMP | Experimento $experimento | Call $llamado | $(curl -s $API_URL)"
+    sleep $DELAY_LLAMADO
+  done
+  sleep 5
 done
-log_message "Fin Experimento"

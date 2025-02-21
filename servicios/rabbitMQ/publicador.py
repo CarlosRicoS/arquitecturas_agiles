@@ -12,7 +12,6 @@ class Publicador:
         self.nombre_exchange = 'monitor'
         self.tipo_exchange = 'direct'
         self.configuracion_mensajeria()   
-        logger.info("Mensajería configurada")
 
     def escribir_mensajes(self, routing_key, mensaje, log_level):
         properties = pika.BasicProperties(headers={'log_level': log_level})
