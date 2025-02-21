@@ -7,12 +7,15 @@ import pika
 import random
 from fastapi import FastAPI
 
+instancia = os.getenv("API_INSTANCIA", "principal")
+rabbitmq_host = os.getenv('RABBITMQ_HOST', 'rabbitmq')
+puerto = os.getenv("API_PUERTO", "8090")
 
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(name)s|[%(levelname)s]|%(asctime)s|%(message)s',
     handlers=[
-        logging.FileHandler("logs/api-consulta-principal.log"),
+        logging.FileHandler(f"logs/api-consulta-{instancia}.log", mode="w"),
         logging.StreamHandler()
     ]
 )
@@ -20,9 +23,6 @@ logging.basicConfig(
 # Set pika logger to WARNING level to suppress INFO logs
 logging.getLogger("pika").setLevel(logging.WARNING)
 
-rabbitmq_host = os.getenv('RABBITMQ_HOST', 'rabbitmq')
-instancia = os.getenv("API_INSTANCIA", "principal")
-puerto = os.getenv("API_PUERTO", "8090")
 
 app = FastAPI()
 
@@ -66,6 +66,10 @@ async def consulta():
         await startup_event()
 
     return status
+
+@app.get("/health")
+async def health():
+    return "ok"
 
 if __name__ == '__main__':
     import uvicorn
