@@ -1,7 +1,7 @@
 # Experimento Arquitecturas Ágiles
 
 
-| Titulo del experimento                 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Titulo del experimento                 |            Detección de fallas en Cantidad y tiempo                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 |----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Propósito del experimento              | Intentar detectar fallas a través del reporte del heartbeat mediante comunicación<br/> asincrónica y reportar el fallo de alguna instancia de un micro-servicio.                                                                                                                                                                                                                                                                                                                                              |
 | Resultados esperados                   | Lograr generar el reporte del fallo en menos de 2 segundos. <br/> Detectar el 100% de fallas generadas en el sistema                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -14,7 +14,7 @@ Para correr el experimento se debe clonar el repositorio desde la rama `main`, a
 
 1. Se debe ejecutar el siguiente comando para levantar los micro-servicios y ejecutar el experimento: 
     ```
-    docker compose up
+    docker compose up --build
     ```
 2. Esperar a que se ejecuten las pruebas del experimento.
 3. Verificar que el experimento corra satisfactoriamente revisando los logs en el directorio `logs` (se crean varios archivos). Validar el archivo `run_experimento.log` un ejemplo de este cuando el experimento corre satisfactoriamente: 
@@ -33,3 +33,7 @@ Para correr el experimento se debe clonar el repositorio desde la rama `main`, a
     2025-02-21 01:56:05 - Fin Experimento
    ```
 4. Realizar el análisis de los demás logs (el `logger.log` almacena los mensajes error reportados por el monitor) para comprobar que se ha detectado la/las falla/s.
+5. Para ver el reporte del experimento acceder mediante el puerto 3000 del localhost
+    ```
+    http://localhost:3000
+    ```
