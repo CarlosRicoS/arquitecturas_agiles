@@ -2,13 +2,15 @@ import os
 import threading
 import pika 
 import logging
+from pika.credentials import PlainCredentials
 
 logger = logging.getLogger(__name__)
 rabbitmq_host = os.getenv('RABBITMQ_HOST', 'rabbitmq')
 
 class Subscriptor:
       
-    def __init__(self):
+    def __init__(self, token=None):
+        self.token = token
         self.host = rabbitmq_host
         self.nombre_exchange = 'monitor'
         self.tipo_exchange = 'direct'
@@ -29,8 +31,11 @@ class Subscriptor:
         logger.info("Suscripción configurada")
 
     def configuracion_mensajeria(self):
+        jwt_token = PlainCredentials(username=f"Bearer {self.token}", password="")
         self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=self.host)
+            pika.ConnectionParameters(
+                host=self.host, 
+            )
         )
         self.channel = self.connection.channel()
 
