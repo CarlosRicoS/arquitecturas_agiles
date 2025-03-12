@@ -1,0 +1,60 @@
+{
+  "rabbit_version": "3.12",
+  "users": [
+    {
+      "name": "detector",
+      "tags": []
+    },
+    {
+      "name": "publisher",
+      "tags": []
+    },
+    {
+      "name": "auditor",
+      "tags": []
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "detector",
+      "vhost": "/",
+      "configure": "",
+      "write": "",
+      "read": "inventory-audit.*"
+    },
+    {
+      "user": "publisher",
+      "vhost": "/",
+      "configure": "",
+      "write": "monitor.*",
+      "read": ""
+    },
+    {
+      "user": "auditor",
+      "vhost": "/",
+      "configure": "",
+      "write": "",
+      "read": "inventory-audit.*"
+    }
+  ],
+  "parameters": [],
+  "policies": [],
+  "queues": [],
+  "exchanges": [
+    {
+      "name": "monitor",
+      "vhost": "/",
+      "type": "direct",
+      "durable": false,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": []
+}

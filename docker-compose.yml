@@ -5,6 +5,9 @@ services:
     ports:
       - "5672:5672" # AMQP protocol
       - "15672:15672" # Management UI
+    volumes:
+      - ./seguridad/message_broker/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./seguridad/message_broker/rabbitmq_definitions.json:/etc/rabbitmq/definitions.json
     environment:
       - RABBITMQ_LOGS=error # Change to "warning", "error", or "critical" to reduce verbosity
       - RABBITMQ_SASL_LOGS=error
@@ -17,8 +20,8 @@ services:
   detector:
     build:
       context: .
-      dockerfile: monitor/Dockerfile
-    container_name: "monitor"
+      dockerfile: seguridad/deteccion_intrusos/Dockerfile
+    container_name: "detector"
     depends_on:
       rabbitmq:
         condition: service_healthy
