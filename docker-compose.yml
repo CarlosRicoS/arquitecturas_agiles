@@ -43,35 +43,58 @@ services:
       retries: 3
       start_period: 2s
 
-  inventario:
-    build: ./inventario
-    container_name: inventario_service
-    depends_on:
-      - rabbitmq
-    ports:
-      - "5000:5000"
-
-  logs:
-    build: ./logs
-    container_name: logs_service
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
+  autorizador:
+    build:
+      context: seguridad/autorizador
+      dockerfile: ./Dockerfile
+    container_name: "autorizador"
     environment:
-      - RABBITMQ_HOST=rabbitmq
-      - ORIGENES_AUTORIZADOS="['192.168.0.2']"
+      - PRE_SHARED_KEY=tOQJ4HDu9mWtYDhEwtTV5MgBCjUlw9dqCzunwkD0TO8=
+      - AUTORIZADOR_PUERTO=8090
+    ports:
+      - "8090:8090"
     volumes:
       - ./logs:/app/logs
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    healthcheck:
-      test: ["CMD-SHELL", "sleep 10 && echo 'detector ready'"]
-      interval: 5s
-      retries: 3
-      start_period: 2s
+
+  inventario:
+    build:
+      context: seguridad/inventario
+      dockerfile: ./Dockerfile
+    container_name: inventario_service
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - AUTORIZADOR_HOST=autorizador
+      - AUTORIZADOR_PUERTO=8090
+      - NOMBRE_COLA=inventory-audit
+    depends_on:
+      - rabbitmq
+      - autorizador
+    ports:
+      - "8080:8080"
+
+
+
+#  logs:
+#    build: ./logs
+#    container_name: logs_service
+#    depends_on:
+#      rabbitmq:
+#        condition: service_healthy
+#    environment:
+#      - RABBITMQ_HOST=rabbitmq
+#      - ORIGENES_AUTORIZADOS="['192.168.0.2']"
+#    volumes:
+#      - ./logs:/app/logs
+#    logging:
+#      driver: "json-file"
+#      options:
+#        max-size: "10m"
+#        max-file: "3"
+#    healthcheck:
+#      test: ["CMD-SHELL", "sleep 10 && echo 'detector ready'"]
+#      interval: 5s
+#      retries: 3
+#      start_period: 2s
 
 volumes:
   logs_data:

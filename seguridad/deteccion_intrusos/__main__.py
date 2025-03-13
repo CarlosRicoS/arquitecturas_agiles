@@ -5,12 +5,12 @@ from detector import Detector
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(name)s|[%(levelname)s]|%(asctime)s|%(message)s',
+    format="%(name)s|[%(levelname)s]|%(asctime)s|%(message)s",
     handlers=[
-        logging.FileHandler("logs/monitor.log", mode="w"),
-        logging.StreamHandler()
-    ]
+        logging.FileHandler("logs/detector_intrusos.log", mode="w"),
+        logging.StreamHandler(),
+    ],
 )
 
-if __name__=="__main__":
+if __name__ == "__main__":
     asyncio.run(Detector().start())
