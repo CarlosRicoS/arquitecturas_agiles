@@ -1,5 +1,9 @@
-FROM python:3.9
+FROM python:3.12
+
 WORKDIR /app
-COPY app.py /app/
-RUN pip install flask pika
+
+COPY . .
+
+RUN pip install flask pika requests
+
 CMD ["python", "app.py"]
