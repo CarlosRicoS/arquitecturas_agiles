@@ -146,7 +146,7 @@ services:
     environment:
       - INVENTARIO_URL=http://inventario:8080
       - AUTORIZADOR_URL=https://autorizador:4443
-      - USUARIO_OAUTH=cliente_intruso
+      - USUARIO_OAUTH=usuario_intruso
       - CANTIDAD_SOLICITUDES=4
     depends_on:
       cliente_legitimo:

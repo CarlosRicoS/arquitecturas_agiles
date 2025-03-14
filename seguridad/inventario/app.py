@@ -7,7 +7,6 @@ import requests
 from flask import Flask, request, jsonify
 
 from cliente_autorizador import ClienteAutorizador
-from disponibilidad.servicios.rabbitMQ import publicador
 from disponibilidad.servicios.rabbitMQ.publicador import Publicador
 from seguridad.common.inventory_audit_message import Inventory_Audit_Message
 

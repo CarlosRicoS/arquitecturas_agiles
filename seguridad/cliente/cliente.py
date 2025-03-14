@@ -52,7 +52,7 @@ def main() -> None:
         if accion[0] == "POST" or accion[0] == "DELETE":
             data = {"nombre": random.choice(NOMBRE_PRODUCTOS)}
         ejecutar_solicitud(accion, data)
-        sleep(3)
+        sleep(1)
 
 
 if __name__ == "__main__":
