@@ -10,10 +10,9 @@ rabbitmq_host = os.getenv("RABBITMQ_HOST", "rabbitmq")
 
 class Subscriptor:
 
-    def __init__(self, token=None):
-        logger.info("Initializing Subscriptor")
+    def __init__(self, token=None, username: str = None):
         self.token = token
-        logger.info(f"Token: {self.token}")
+        self.username = username
         self.host = rabbitmq_host
         self.nombre_exchange = "monitor"
         self.tipo_exchange = "direct"
@@ -34,7 +33,7 @@ class Subscriptor:
         logger.info("Suscripción configurada")
 
     def configuracion_mensajeria(self):
-        jwt_token = PlainCredentials(username="detector", password=self.token)
+        jwt_token = PlainCredentials(username=self.username, password=self.token)
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(
                 host=self.host,

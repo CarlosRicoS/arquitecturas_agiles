@@ -57,8 +57,12 @@ class SolicitudAutorizacion(BaseModel):
     token: str
 
 
-class RespuestaAutorizacion(BaseModel):
+class RespuestaToken(BaseModel):
     token: str
+
+
+class RespuestaAutorizacion(BaseModel):
+    user: str
 
 
 class JWK(BaseModel):
@@ -137,7 +141,7 @@ def decodificar_token(solicitud: SolicitudAutorizacion) -> Any:
     return decoded_token
 
 
-def autorizar_usuario(solicitud: SolicitudAutorizacion) -> bool:
+def autorizar_usuario(solicitud: SolicitudAutorizacion) -> tuple[str, bool]:
     autorizado = False
     decoded_token = decodificar_token(solicitud)
     usuario = decoded_token.get("sub")
@@ -157,24 +161,24 @@ def autorizar_usuario(solicitud: SolicitudAutorizacion) -> bool:
     logging.debug(
         f"[Autorizador]: {usuario=} {permisos=} {solicitud.method=} {solicitud.path=} -> {autorizado=}"
     )
-    return autorizado
+    return usuario, autorizado
 
 
 @app.post("/autorizar", response_model=RespuestaAutorizacion)
 def autorizar(solicitud: SolicitudAutorizacion) -> RespuestaAutorizacion:
     try:
-        autorizado = autorizar_usuario(solicitud)
+        usuario, autorizado = autorizar_usuario(solicitud)
         if not autorizado:
             raise HTTPException(status_code=403, detail="Permission denied")
-        return RespuestaAutorizacion(token=solicitud.token)
+        return RespuestaAutorizacion(user=usuario)
     except InvalidSignatureError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-@app.post("/token/{usuario}", response_model=RespuestaAutorizacion)
-def token_usuario(usuario: str) -> RespuestaAutorizacion:
+@app.post("/token/{usuario}", response_model=RespuestaToken)
+def token_usuario(usuario: str) -> RespuestaToken:
     token = generar_token(usuario)
-    return RespuestaAutorizacion(token=token)
+    return RespuestaToken(token=token)
 
 
 @app.get("/.well-known/jwks.json", response_model=JWKS)

@@ -79,17 +79,18 @@ services:
 
   inventario:
     build:
-      context: seguridad/inventario
-      dockerfile: ./Dockerfile
+      context: .
+      dockerfile: seguridad/inventario/Dockerfile
     container_name: inventario_service
     environment:
       - RABBITMQ_HOST=rabbitmq
-      - AUTORIZADOR_HOST=autorizador
-      - AUTORIZADOR_PUERTO=443
       - NOMBRE_COLA=inventory-audit
+      - AUTORIZADOR_URL=https://autorizador:4443
+    volumes:
+      - ./logs:/app/logs
     depends_on:
-      - rabbitmq
-      - autorizador
+      detector:
+        condition: service_healthy
     ports:
       - "8080:8080"
     networks:

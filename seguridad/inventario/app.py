@@ -1,73 +1,126 @@
+import logging
 import os
+import uuid
+from datetime import datetime
 
+import requests
 from flask import Flask, request, jsonify
-import pika
-import json
 
 from cliente_autorizador import ClienteAutorizador
+from disponibilidad.servicios.rabbitMQ import publicador
+from disponibilidad.servicios.rabbitMQ.publicador import Publicador
+from seguridad.common.inventory_audit_message import Inventory_Audit_Message
+
+
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
+QUEUE_NAME = os.getenv("NOMBRE_COLA")
+AUTORIZADOR_URL = os.getenv("AUTORIZADOR_URL")
+USUARIO_OAUTH = "publisher"
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(name)s|[%(levelname)s]|%(asctime)s|%(message)s",
+    handlers=[
+        logging.FileHandler(f"logs/inventario.log", mode="w"),
+        logging.StreamHandler(),
+    ],
+)
+
+logging.getLogger("pika").setLevel(logging.CRITICAL)
+logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 
 app = Flask(__name__)
 
-# Configurar conexión a RabbitMQ
-rabbitmq_host = os.getenv("RABBITMQ_HOST", "rabbitmq")
-queue_name = os.getenv("NOMBRE_COLA")
+
+def generar_oauth_token():
+    response = requests.post(f"{AUTORIZADOR_URL}/token/{USUARIO_OAUTH}", verify=False)
+    token = response.json()["token"]
+    return token
 
 
-def send_log(username, action, data):
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq_host))
-    channel = connection.channel()
-    channel.queue_declare(queue=queue_name, durable=True)
+publicador = Publicador(token=generar_oauth_token(), username=USUARIO_OAUTH)
 
-    log_entry = {"username": username, "action": action, "data": data}
 
-    channel.basic_publish(
-        exchange="", routing_key=queue_name, body=json.dumps(log_entry)
+def definir_mensaje(detalle):
+    inventory_audit_message = Inventory_Audit_Message(
+        detail=detalle,
+        event_type="CAMBIO-INVENTARIO",
+        uuid=str(uuid.uuid4()),
+        timestamp=datetime.now().isoformat(),
     )
-    connection.close()
+
+    return inventory_audit_message.get_message()
+
+
+def publicar_log(detalle):
+
+    mensaje = definir_mensaje(detalle)
+    publicador.escribir_mensajes(
+        routing_key=QUEUE_NAME, mensaje=mensaje, log_level=logging.INFO
+    )
+    logging.debug(f"[Inventario] Sent {mensaje}")
 
 
 # Inventario (simulado en memoria)
 inventario = []
 
 
-def verificar_autorizacion(token: str) -> bool:
+def verificar_autorizacion(method: str, path: str, token: str) -> str | None:
     cliente_autorizador = ClienteAutorizador(token=token)
 
-    return cliente_autorizador.autorizar()
+    return cliente_autorizador.autorizar(method, path)
 
 
 @app.route("/productos", methods=["GET"])
 def obtener_productos():
     token = request.headers.get("Authorization").replace("Bearer ", "")
-    if not verificar_autorizacion(token):
+    usuario_autorizado = verificar_autorizacion("GET", "/productos", token)
+    if not usuario_autorizado:
         return jsonify({"error": "No Autorizado"}), 401
+    detalle_mensaje = {
+        "usuario": usuario_autorizado,
+        "accion": "GET",
+        "data": inventario,
+    }
+    publicar_log(detalle_mensaje)
     return jsonify(inventario)
 
 
 @app.route("/productos", methods=["POST"])
 def agregar_producto():
     token = request.headers.get("Authorization").replace("Bearer ", "")
-    if not verificar_autorizacion(token):
+    usuario_autorizado = verificar_autorizacion("POST", "/productos", token)
+    if not usuario_autorizado:
         return jsonify({"error": "No Autorizado"}), 401
     data = request.json
-    username = request.headers.get("Username", "unknown_user")
     if "nombre" not in data:
         return jsonify({"error": "El producto debe tener un nombre"}), 400
 
     inventario.append(data["nombre"])
-    send_log(username, "POST", data["nombre"])
+    detalle_mensaje = {
+        "usuario": usuario_autorizado,
+        "accion": "POST",
+        "data": data["nombre"],
+    }
+    publicar_log(detalle_mensaje)
     return jsonify({"mensaje": "Producto agregado"}), 201
 
 
 @app.route("/productos/<nombre>", methods=["DELETE"])
 def eliminar_producto(nombre):
     token = request.headers.get("Authorization").replace("Bearer ", "")
-    if not verificar_autorizacion(token):
+    usuario_autorizado = verificar_autorizacion("DELETE", "/productos/<nombre>", token)
+    if not usuario_autorizado:
         return jsonify({"error": "No Autorizado"}), 401
-    username = request.headers.get("Username", "unknown_user")
     if nombre in inventario:
         inventario.remove(nombre)
-        send_log(username, "DELETE", nombre)
+        detalle_mensaje = {
+            "usuario": usuario_autorizado,
+            "accion": "DELETE",
+            "data": nombre,
+        }
+        publicar_log(detalle_mensaje)
         return jsonify({"mensaje": "Producto eliminado"}), 200
     return jsonify({"error": "Producto no encontrado"}), 404
 

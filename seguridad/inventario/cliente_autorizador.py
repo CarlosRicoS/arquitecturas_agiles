@@ -4,27 +4,28 @@ from dataclasses import dataclass
 
 import requests
 
-AUTORIZADOR_HOST = os.environ.get("AUTORIZADOR_HOST")
-AUTORIZADOR_PUERTO = os.environ.get("AUTORIZADOR_PUERTO")
+AUTORIZADOR_URL = os.environ.get("AUTORIZADOR_URL")
 
 
 @dataclass()
 class ClienteAutorizador:
     token: str
 
-    @property
-    def base_url(self):
-        return f"http://{AUTORIZADOR_HOST}:{AUTORIZADOR_PUERTO}"
+    def autorizar(self, method: str, path: str) -> str | None:
+        payload = {
+            "token": self.token,
+            "method": method,
+            "path": path,
+        }
 
-    def autorizar(self) -> bool:
         response = requests.post(
-            f"{self.base_url}/autorizar", json={"token": self.token}, verify=False
+            f"{AUTORIZADOR_URL}/autorizar", json=payload, verify=False
         )
 
         if response.status_code != 200:
             logging.error(
                 f"Error de autorizacion: {response.status_code=} -> {response.text=}"
             )
-            return False
+            return None
 
-        return True
+        return response.json()["user"]
