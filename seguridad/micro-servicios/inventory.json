@@ -1,0 +1,9 @@
+{
+    "productos": [
+        {"id": 1, "nombre": "Laptop", "cantidad": 5},
+        {"id": 2, "nombre": "Mouse", "cantidad": 10},
+        {"id": 3, "nombre": "Teclado", "cantidad": 20},
+        {"id": 4, "nombre": "Monitor", "cantidad": 30},
+        {"id": 5, "nombre": "Impresora", "cantidad": 40}
+    ]
+}
