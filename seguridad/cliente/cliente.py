@@ -1,5 +1,6 @@
 import os
 import random
+import subprocess
 from functools import partial
 from time import sleep
 
@@ -28,17 +29,33 @@ solicitud_funciones = {
     "DELETE": partial(requests.delete),
 }
 
+token = None
+
 
 def generar_token():
-    response = requests.post(f"{AUTORIZADOR_URL}/token/{USUARIO_OAUTH}", verify=False)
-    return response.json()["token"]
+    global token
+    if token is None:
+        response = requests.post(
+            f"{AUTORIZADOR_URL}/token/{USUARIO_OAUTH}", verify=False
+        )
+        token = response.json()["token"]
+
+    return token
+
+
+def retrieve_host_ip():
+    container_ip = subprocess.getoutput("hostname -I").strip()
+    return container_ip
 
 
 def ejecutar_solicitud(accion: tuple[str, str], data: dict[str, str] = None) -> None:
     funcion = partial(
         solicitud_funciones[accion[0]], url=f"{INVENTARIO_URL}{accion[1]}"
     )
-    headers = {"Authorization": f"Bearer {generar_token()}"}
+    headers = {
+        "Authorization": f"Bearer {generar_token()}",
+        "IP-Address": retrieve_host_ip(),
+    }
     if data:
         funcion(json=data, headers=headers)
     else:

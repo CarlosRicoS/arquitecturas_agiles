@@ -37,23 +37,31 @@ def generar_oauth_token():
     return token
 
 
-publicador = Publicador(token=generar_oauth_token(), username=USUARIO_OAUTH)
+publicador = None
 
 
-def definir_mensaje(detalle):
+def get_publicador():
+    global publicador
+    if publicador is None:
+        publicador = Publicador(token=generar_oauth_token(), username=USUARIO_OAUTH)
+    return publicador
+
+
+def definir_mensaje(detalle, ip):
     inventory_audit_message = Inventory_Audit_Message(
         detail=detalle,
         event_type="CAMBIO-INVENTARIO",
         uuid=str(uuid.uuid4()),
         timestamp=datetime.now().isoformat(),
+        host_ip=ip,
     )
 
     return inventory_audit_message.get_message()
 
 
-def publicar_log(detalle):
-
-    mensaje = definir_mensaje(detalle)
+def publicar_log(detalle, ip):
+    get_publicador()
+    mensaje = definir_mensaje(detalle, ip)
     publicador.escribir_mensajes(
         routing_key=QUEUE_NAME, mensaje=mensaje, log_level=logging.INFO
     )
@@ -81,7 +89,7 @@ def obtener_productos():
         "accion": "GET",
         "data": inventario,
     }
-    publicar_log(detalle_mensaje)
+    publicar_log(detalle_mensaje, request.remote_addr)
     return jsonify(inventario)
 
 
@@ -101,7 +109,7 @@ def agregar_producto():
         "accion": "POST",
         "data": data["nombre"],
     }
-    publicar_log(detalle_mensaje)
+    publicar_log(detalle_mensaje, request.remote_addr)
     return jsonify({"mensaje": "Producto agregado"}), 201
 
 
@@ -118,7 +126,7 @@ def eliminar_producto(nombre):
             "accion": "DELETE",
             "data": nombre,
         }
-        publicar_log(detalle_mensaje)
+        publicar_log(detalle_mensaje, request.remote_addr)
         return jsonify({"mensaje": "Producto eliminado"}), 200
     return jsonify({"error": "Producto no encontrado"}), 404
 
