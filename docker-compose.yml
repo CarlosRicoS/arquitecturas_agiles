@@ -8,14 +8,44 @@ services:
     volumes:
       - ./seguridad/message_broker/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
       - ./seguridad/message_broker/rabbitmq_definitions.json:/etc/rabbitmq/definitions.json
-    environment:
-      - RABBITMQ_LOGS=error # Change to "warning", "error", or "critical" to reduce verbosity
-      - RABBITMQ_SASL_LOGS=error
+      - ./seguridad/autorizador/config/certs/cacert.pem:/etc/ssl/certs/cacert.pem
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
       interval: 10s
       retries: 5
       start_period: 60s
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.2
+
+  autorizador:
+    build:
+      context: seguridad/autorizador
+      dockerfile: ./Dockerfile
+    command: bash -c "uvicorn autorizador:app --reload --port 4443 --host 0.0.0.0 --ssl-certfile /etc/certs/localhost.crt --ssl-keyfile /etc/certs/localhost.key --reload "
+    container_name: "autorizador"
+    environment:
+      - PRE_SHARED_KEY=tOQJ4HDu9mWtYDhEwtTV5MgBCjUlw9dqCzunwkD0TO8=
+      - AUTORIZADOR_PUERTO=4443
+    ports:
+      - "4443:4443"
+    volumes:
+      - ./logs:/app/logs
+      - ./seguridad/autorizador/config/certs/:/etc/certs
+    healthcheck:
+      test: [ "CMD", "curl", "-k", "https://autorizador:4443/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 2s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.3
 
   detector:
     build:
@@ -25,9 +55,12 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      autorizador:
+        condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
-      - ORIGENES_AUTORIZADOS="['192.168.0.2']"
+      - ORIGENES_AUTORIZADOS="['172.20.0.2', '172.20.0.3', '172.20.0.4', '172.20.0.5', '172.20.0.6', '172.20.0.7']"
+      - AUTORIZADOR_URL=https://autorizador:4443
     volumes:
       - ./logs:/app/logs
     logging:
@@ -40,4 +73,92 @@ services:
       interval: 5s
       retries: 3
       start_period: 2s
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.4
 
+  inventario:
+    build:
+      context: .
+      dockerfile: seguridad/inventario/Dockerfile
+    container_name: inventario_service
+    environment:
+      - NOMBRE_COLA=inventory-audit
+      - AUTORIZADOR_URL=https://autorizador:4443
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      detector:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: [ "CMD", "curl", "-k", "http://inventario:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 2s
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.5
+
+  auditor:
+    build:
+      context: .
+      dockerfile: seguridad/auditor/Dockerfile
+    container_name: auditor
+    environment:
+      - QUEUE_NAME=inventory-audit
+      - AUTORIZADOR_URL=https://autorizador:4443
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.6
+
+  cliente_legitimo:
+    build:
+      context: seguridad/cliente
+      dockerfile: ./Dockerfile
+    command: "cliente.py"
+    container_name: cliente_legitimo
+    environment:
+      - INVENTARIO_URL=http://inventario:8080
+      - AUTORIZADOR_URL=https://autorizador:4443
+      - USUARIO_OAUTH=usuario_legitimo
+      - CANTIDAD_SOLICITUDES=10
+    depends_on:
+      inventario:
+        condition: service_healthy
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.7
+
+  cliente_intruso:
+    build:
+      context: seguridad/cliente/intruso
+      dockerfile: ./Dockerfile
+    container_name: cliente_intruso
+    volumes:
+      - ./seguridad/cliente/cliente.py:/app/cliente.py
+    environment:
+      - INVENTARIO_URL=http://inventario:8080
+      - AUTORIZADOR_URL=https://autorizador:4443
+      - USUARIO_OAUTH=usuario_intruso
+      - CANTIDAD_SOLICITUDES=4
+    depends_on:
+      cliente_legitimo:
+        condition: service_completed_successfully
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.8
+
+networks:
+  custom_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
