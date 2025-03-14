@@ -59,7 +59,7 @@ services:
         condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
-      - ORIGENES_AUTORIZADOS="['192.168.0.2']"
+      - ORIGENES_AUTORIZADOS="['172.20.0.2', '172.20.0.3', '172.20.0.4', '172.20.0.5', '172.20.0.6']"
       - AUTORIZADOR_URL=https://autorizador:4443
     volumes:
       - ./logs:/app/logs
@@ -92,6 +92,12 @@ services:
         condition: service_healthy
     ports:
       - "8080:8080"
+    healthcheck:
+      test: [ "CMD", "curl", "-k", "http://inventario:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 2s
     networks:
       custom_network:
         ipv4_address: 172.20.0.5
@@ -113,27 +119,41 @@ services:
       custom_network:
         ipv4_address: 172.20.0.6
 
-#  logs:
-#    build: ./logs
-#    container_name: logs_service
-#    depends_on:
-#      rabbitmq:
-#        condition: service_healthy
-#    environment:
-#      - RABBITMQ_HOST=rabbitmq
-#      - ORIGENES_AUTORIZADOS="['192.168.0.2']"
-#    volumes:
-#      - ./logs:/app/logs
-#    logging:
-#      driver: "json-file"
-#      options:
-#        max-size: "10m"
-#        max-file: "3"
-#    healthcheck:
-#      test: ["CMD-SHELL", "sleep 10 && echo 'detector ready'"]
-#      interval: 5s
-#      retries: 3
-#      start_period: 2s
+  cliente_legitimo:
+    build:
+      context: seguridad/cliente
+      dockerfile: ./Dockerfile
+    command: "cliente.py"
+    container_name: cliente_legitimo
+    environment:
+      - INVENTARIO_URL=http://inventario:8080
+      - AUTORIZADOR_URL=https://autorizador:4443
+      - USUARIO_OAUTH=usuario_legitimo
+      - CANTIDAD_SOLICITUDES=10
+    depends_on:
+      inventario:
+        condition: service_healthy
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.7
+
+  cliente_intruso:
+    build:
+      context: seguridad/cliente
+      dockerfile: ./Dockerfile
+    command: "cliente.py"
+    container_name: cliente_intruso
+    environment:
+      - INVENTARIO_URL=http://inventario:8080
+      - AUTORIZADOR_URL=https://autorizador:4443
+      - USUARIO_OAUTH=cliente_intruso
+      - CANTIDAD_SOLICITUDES=4
+    depends_on:
+      cliente_legitimo:
+        condition: service_completed_successfully
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.7
 
 networks:
   custom_network:

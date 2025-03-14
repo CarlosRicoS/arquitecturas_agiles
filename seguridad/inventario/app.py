@@ -124,5 +124,10 @@ def eliminar_producto(nombre):
     return jsonify({"error": "Producto no encontrado"}), 404
 
 
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "OK"})
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080, debug=True)
