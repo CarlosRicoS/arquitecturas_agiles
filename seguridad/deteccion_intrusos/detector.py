@@ -10,6 +10,8 @@ from disponibilidad.servicios.rabbitMQ.subscriptor import Subscriptor
 
 logger = logging.getLogger(__name__)
 
+AUTORIZADOR_URL = os.getenv("AUTORIZADOR_URL")
+
 
 class Detector:
 
@@ -58,8 +60,6 @@ class Detector:
             )
 
     def generar_jwt(self):
-        response = requests.post(
-            "https://autorizador:4443/token/detector", verify=False
-        )
+        response = requests.post(f"{AUTORIZADOR_URL}/token/detector", verify=False)
         token = response.json()["token"]
         return token

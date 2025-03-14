@@ -14,6 +14,9 @@ services:
       interval: 10s
       retries: 5
       start_period: 60s
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.2
 
   autorizador:
     build:
@@ -40,6 +43,9 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.3
 
   detector:
     build:
@@ -67,8 +73,9 @@ services:
       interval: 5s
       retries: 3
       start_period: 2s
-
-
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.4
 
   inventario:
     build:
@@ -85,8 +92,9 @@ services:
       - autorizador
     ports:
       - "8080:8080"
-
-
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.5
 
 #  logs:
 #    build: ./logs
@@ -110,5 +118,9 @@ services:
 #      retries: 3
 #      start_period: 2s
 
-volumes:
-  logs_data:
+networks:
+  custom_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
