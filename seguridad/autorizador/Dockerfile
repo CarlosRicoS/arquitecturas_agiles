@@ -6,8 +6,10 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN apt update
+
+RUN apt -y install libsasl2-dev python-dev-is-python3 libldap2-dev libssl-dev
+
 COPY . .
 
 EXPOSE ${AUTORIZADOR_PUERTO}
-
-CMD ["sh", "-c", "uvicorn autorizador:app --host 0.0.0.0 --port ${AUTORIZADOR_PUERTO}"]

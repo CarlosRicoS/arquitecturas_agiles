@@ -8,16 +8,38 @@ services:
     volumes:
       - ./seguridad/message_broker/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
       - ./seguridad/message_broker/rabbitmq_definitions.json:/etc/rabbitmq/definitions.json
-    environment:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_PASS: password
-      #- RABBITMQ_LOGS=error # Change to "warning", "error", or "critical" to reduce verbosity
-      #- RABBITMQ_SASL_LOGS=error
+      - ./seguridad/autorizador/config/certs/cacert.pem:/etc/ssl/certs/cacert.pem
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
       interval: 10s
       retries: 5
       start_period: 60s
+
+  autorizador:
+    build:
+      context: seguridad/autorizador
+      dockerfile: ./Dockerfile
+    command: bash -c "uvicorn autorizador:app --reload --port 4443 --host 0.0.0.0 --ssl-certfile /etc/certs/localhost.crt --ssl-keyfile /etc/certs/localhost.key --reload "
+    container_name: "autorizador"
+    environment:
+      - PRE_SHARED_KEY=tOQJ4HDu9mWtYDhEwtTV5MgBCjUlw9dqCzunwkD0TO8=
+      - AUTORIZADOR_PUERTO=4443
+    ports:
+      - "4443:4443"
+    volumes:
+      - ./logs:/app/logs
+      - ./seguridad/autorizador/config/certs/:/etc/certs
+    healthcheck:
+      test: [ "CMD", "curl", "-k", "https://autorizador:4443/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 2s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   detector:
     build:
@@ -27,9 +49,12 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      autorizador:
+        condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
       - ORIGENES_AUTORIZADOS="['192.168.0.2']"
+      - AUTORIZADOR_URL=https://autorizador:4443
     volumes:
       - ./logs:/app/logs
     logging:
@@ -43,18 +68,7 @@ services:
       retries: 3
       start_period: 2s
 
-  autorizador:
-    build:
-      context: seguridad/autorizador
-      dockerfile: ./Dockerfile
-    container_name: "autorizador"
-    environment:
-      - PRE_SHARED_KEY=tOQJ4HDu9mWtYDhEwtTV5MgBCjUlw9dqCzunwkD0TO8=
-      - AUTORIZADOR_PUERTO=8090
-    ports:
-      - "8090:8090"
-    volumes:
-      - ./logs:/app/logs
+
 
   inventario:
     build:
@@ -64,7 +78,7 @@ services:
     environment:
       - RABBITMQ_HOST=rabbitmq
       - AUTORIZADOR_HOST=autorizador
-      - AUTORIZADOR_PUERTO=8090
+      - AUTORIZADOR_PUERTO=443
       - NOMBRE_COLA=inventory-audit
     depends_on:
       - rabbitmq
