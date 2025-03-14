@@ -83,7 +83,6 @@ services:
       dockerfile: seguridad/inventario/Dockerfile
     container_name: inventario_service
     environment:
-      - RABBITMQ_HOST=rabbitmq
       - NOMBRE_COLA=inventory-audit
       - AUTORIZADOR_URL=https://autorizador:4443
     volumes:
@@ -96,6 +95,23 @@ services:
     networks:
       custom_network:
         ipv4_address: 172.20.0.5
+
+  auditor:
+    build:
+      context: .
+      dockerfile: seguridad/auditor/Dockerfile
+    container_name: auditor
+    environment:
+      - QUEUE_NAME=inventory-audit
+      - AUTORIZADOR_URL=https://autorizador:4443
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.6
 
 #  logs:
 #    build: ./logs

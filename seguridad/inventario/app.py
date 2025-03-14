@@ -12,7 +12,6 @@ from disponibilidad.servicios.rabbitMQ.publicador import Publicador
 from seguridad.common.inventory_audit_message import Inventory_Audit_Message
 
 
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 QUEUE_NAME = os.getenv("NOMBRE_COLA")
 AUTORIZADOR_URL = os.getenv("AUTORIZADOR_URL")
 USUARIO_OAUTH = "publisher"
