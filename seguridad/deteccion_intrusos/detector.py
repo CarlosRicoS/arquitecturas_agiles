@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timedelta
 import jwt
 import json
@@ -27,7 +28,7 @@ class Detector:
         return json.loads(json.dumps(os.getenv("ORIGENES_AUTORIZADOS", "[]")))
 
     def cofiguracion_detector(self):
-        self.subscriptor = Subscriptor(token=self.generar_jwt())
+        self.subscriptor = Subscriptor(token=self.generar_jwt(), username="detector")
         self.inventory_routing_key = "inventory-audit"
         self.nombre_cola_inventory = "inventory-audit"
 
@@ -45,11 +46,14 @@ class Detector:
         while True:
             pass
 
+    def generar_hash(self, mensaje):
+        return hashlib.sha256(json.dumps(mensaje).encode('utf-8')).hexdigest()
+
     def validar_mensaje(self, mensaje):
         deserialize = json.loads(mensaje)
-        resumen = hash(json.dumps(deserialize.get("message")))
+        resumen = self.generar_hash(deserialize.get("message"))
         if resumen != deserialize.get("check_sum"):
-            logger.warning(f"Mensaje alterado|{mensaje}")
+            logger.warning(f"Mensaje alterado|{mensaje} {resumen=} {deserialize.get("check_sum")=}")
 
     def validar_intrusion(self, mensaje):
         deserialize = json.loads(mensaje)
