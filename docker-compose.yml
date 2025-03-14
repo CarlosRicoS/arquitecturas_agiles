@@ -59,7 +59,7 @@ services:
         condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
-      - ORIGENES_AUTORIZADOS="['172.20.0.2', '172.20.0.3', '172.20.0.4', '172.20.0.5', '172.20.0.6']"
+      - ORIGENES_AUTORIZADOS="['172.20.0.2', '172.20.0.3', '172.20.0.4', '172.20.0.5', '172.20.0.6', '172.20.0.7']"
       - AUTORIZADOR_URL=https://autorizador:4443
     volumes:
       - ./logs:/app/logs
@@ -139,10 +139,11 @@ services:
 
   cliente_intruso:
     build:
-      context: seguridad/cliente
+      context: seguridad/cliente/intruso
       dockerfile: ./Dockerfile
-    command: "cliente.py"
     container_name: cliente_intruso
+    volumes:
+      - ./seguridad/cliente/cliente.py:/app/cliente.py
     environment:
       - INVENTARIO_URL=http://inventario:8080
       - AUTORIZADOR_URL=https://autorizador:4443
@@ -153,7 +154,7 @@ services:
         condition: service_completed_successfully
     networks:
       custom_network:
-        ipv4_address: 172.20.0.7
+        ipv4_address: 172.20.0.8
 
 networks:
   custom_network:

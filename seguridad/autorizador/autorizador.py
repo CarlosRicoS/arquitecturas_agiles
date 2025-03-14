@@ -33,7 +33,7 @@ USUARIOS_PERMISOS = {
     "publisher": PERMISOS_MESSAGE_BROKER,
     "auditor": PERMISOS_MESSAGE_BROKER,
     "usuario_legitimo": ["inventario_write", "inventario_read"],
-    "usuario_intruso": ["inventario_write"],
+    "usuario_intruso": ["inventario_write", "inventario_read"],
 }
 
 PRIVATE_KEY_PATH = "config/keys/private.pem"

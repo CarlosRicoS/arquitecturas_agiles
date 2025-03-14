@@ -65,7 +65,7 @@ def publicar_log(detalle, ip):
     publicador.escribir_mensajes(
         routing_key=QUEUE_NAME, mensaje=mensaje, log_level=logging.INFO
     )
-    logging.debug(f"[Inventario] Sent {mensaje}")
+    logging.debug(f"[Inventario] Sent {ip=} {mensaje}")
 
 
 # Inventario (simulado en memoria)
