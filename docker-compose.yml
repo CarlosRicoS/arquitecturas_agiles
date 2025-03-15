@@ -156,6 +156,26 @@ services:
       custom_network:
         ipv4_address: 172.20.0.8
 
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: security_dashboard
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./logs:/app/public/logs
+    environment:
+      - NODE_ENV=development
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.9
+    depends_on:
+      - auditor
+      - detector
+      - inventario
+      - autorizador
+
 networks:
   custom_network:
     driver: bridge
