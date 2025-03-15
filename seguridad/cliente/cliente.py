@@ -12,6 +12,7 @@ ACCIONES = [
     ("GET", "/productos"),
     ("DELETE", "/productos/<nombre>"),
 ]
+INTERVALO_SOLICITUD = os.getenv("INTERVALO_SOLICITUD")
 USUARIO_OAUTH = os.getenv("USUARIO_OAUTH")
 AUTORIZADOR_URL = os.getenv("AUTORIZADOR_URL")
 CANTIDAD_SOLICITUDES = os.getenv("CANTIDAD_SOLICITUDES")
@@ -69,7 +70,7 @@ def main() -> None:
         if accion[0] == "POST" or accion[0] == "DELETE":
             data = {"nombre": random.choice(NOMBRE_PRODUCTOS)}
         ejecutar_solicitud(accion, data)
-        sleep(1)
+        sleep(float(INTERVALO_SOLICITUD))
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ import logging
 import os
 import uuid
 from datetime import datetime
+from time import sleep
 
 import requests
 from flask import Flask, request, jsonify
