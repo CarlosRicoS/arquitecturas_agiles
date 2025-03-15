@@ -129,7 +129,8 @@ services:
       - INVENTARIO_URL=http://inventario:8080
       - AUTORIZADOR_URL=https://autorizador:4443
       - USUARIO_OAUTH=usuario_legitimo
-      - CANTIDAD_SOLICITUDES=10
+      - CANTIDAD_SOLICITUDES=20
+      - INTERVALO_SOLICITUD=0.5
     depends_on:
       inventario:
         condition: service_healthy
@@ -148,10 +149,11 @@ services:
       - INVENTARIO_URL=http://inventario:8080
       - AUTORIZADOR_URL=https://autorizador:4443
       - USUARIO_OAUTH=usuario_intruso
-      - CANTIDAD_SOLICITUDES=4
+      - CANTIDAD_SOLICITUDES=10
+      - INTERVALO_SOLICITUD=1
     depends_on:
-      cliente_legitimo:
-        condition: service_completed_successfully
+      inventario:
+        condition: service_healthy
     networks:
       custom_network:
         ipv4_address: 172.20.0.8
